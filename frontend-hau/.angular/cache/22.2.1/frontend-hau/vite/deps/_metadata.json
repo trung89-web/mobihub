@@ -1,0 +1,70 @@
+{
+  "hash": "c2de274e",
+  "configHash": "8c3dda03",
+  "lockfileHash": "a44a372b",
+  "browserHash": "e84407bb",
+  "optimized": {
+    "@angular/common/http": {
+      "src": "../../../../../../node_modules/@angular/common/fesm2022/http.mjs",
+      "file": "@angular_common_http.js",
+      "fileHash": "d6bd87d3",
+      "needsInterop": false
+    },
+    "@angular/core": {
+      "src": "../../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "6dd6455f",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "5a29a181",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "a3daf24c",
+      "needsInterop": false
+    },
+    "@angular/router": {
+      "src": "../../../../../../node_modules/@angular/router/fesm2022/router.mjs",
+      "file": "@angular_router.js",
+      "fileHash": "4028ee2b",
+      "needsInterop": false
+    },
+    "rxjs": {
+      "src": "../../../../../../node_modules/rxjs/dist/esm5/index.js",
+      "file": "rxjs.js",
+      "fileHash": "2625e6fa",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "_platform_location-chunk-Bb5AQ4nZ": {
+      "file": "_platform_location-chunk-Bb5AQ4nZ.js",
+      "isDynamicEntry": false
+    },
+    "common-CkgT_OU3": {
+      "file": "common-CkgT_OU3.js",
+      "isDynamicEntry": false
+    },
+    "core-CABa1ZRZ": {
+      "file": "core-CABa1ZRZ.js",
+      "isDynamicEntry": false
+    },
+    "esm5-DYNb5pjm": {
+      "file": "esm5-DYNb5pjm.js",
+      "isDynamicEntry": false
+    },
+    "http-BFaO0LQC": {
+      "file": "http-BFaO0LQC.js",
+      "isDynamicEntry": false
+    },
+    "platform-browser-BgFfGT3E": {
+      "file": "platform-browser-BgFfGT3E.js",
+      "isDynamicEntry": false
+    }
+  }
+}

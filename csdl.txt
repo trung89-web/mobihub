@@ -1,0 +1,186 @@
+-- Chay script nay trong MySQL truoc khi khoi dong ung dung.
+CREATE DATABASE IF NOT EXISTS quan_ly_ban_dien_thoai
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE quan_ly_ban_dien_thoai;
+
+CREATE TABLE IF NOT EXISTS danh_muc (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ten_danh_muc VARCHAR(120) NOT NULL UNIQUE,
+    mo_ta VARCHAR(500)
+);
+
+CREATE TABLE IF NOT EXISTS san_pham (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ma_san_pham VARCHAR(40) NOT NULL UNIQUE,
+    ten_san_pham VARCHAR(180) NOT NULL,
+    thuong_hieu VARCHAR(100),
+    danh_muc_id BIGINT NOT NULL,
+    gia DECIMAL(15,2) NOT NULL,
+    so_luong_ton INT NOT NULL DEFAULT 0,
+    thoi_han_bao_hanh_thang INT NOT NULL DEFAULT 12,
+    anh_url VARCHAR(1000),
+    mo_ta TEXT,
+    dang_kinh_doanh BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT chk_san_pham_gia CHECK (gia >= 0),
+    CONSTRAINT chk_san_pham_ton CHECK (so_luong_ton >= 0),
+    CONSTRAINT fk_san_pham_danh_muc FOREIGN KEY (danh_muc_id) REFERENCES danh_muc(id)
+);
+
+CREATE TABLE IF NOT EXISTS khach_hang (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ho_ten VARCHAR(150) NOT NULL,
+    so_dien_thoai VARCHAR(20) NOT NULL UNIQUE,
+    email VARCHAR(150),
+    dia_chi VARCHAR(500),
+    ngay_sinh DATE
+);
+
+SET @mobihub_ddl = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='khach_hang' AND COLUMN_NAME='ngay_sinh')=0,
+    'ALTER TABLE khach_hang ADD COLUMN ngay_sinh DATE NULL', 'SELECT 1');
+PREPARE mobihub_stmt FROM @mobihub_ddl;
+EXECUTE mobihub_stmt;
+DEALLOCATE PREPARE mobihub_stmt;
+
+SET @mobihub_ddl = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='san_pham' AND COLUMN_NAME='thoi_han_bao_hanh_thang')=0,
+    'ALTER TABLE san_pham ADD COLUMN thoi_han_bao_hanh_thang INT NOT NULL DEFAULT 12', 'SELECT 1');
+PREPARE mobihub_stmt FROM @mobihub_ddl;
+EXECUTE mobihub_stmt;
+DEALLOCATE PREPARE mobihub_stmt;
+
+CREATE TABLE IF NOT EXISTS dia_chi_khach_hang (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    khach_hang_id BIGINT NOT NULL,
+    nhan VARCHAR(60) NOT NULL DEFAULT 'Nhà riêng',
+    nguoi_nhan VARCHAR(150) NOT NULL,
+    so_dien_thoai VARCHAR(20) NOT NULL,
+    dia_chi VARCHAR(500) NOT NULL,
+    mac_dinh BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT fk_dia_chi_khach_hang FOREIGN KEY (khach_hang_id)
+        REFERENCES khach_hang(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tai_khoan (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    khach_hang_id BIGINT,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    mat_khau_hash VARCHAR(100) NOT NULL,
+    vai_tro VARCHAR(20) NOT NULL,
+    phuong_thuc_thanh_toan_mac_dinh VARCHAR(40) NOT NULL DEFAULT 'COD',
+    dang_hoat_dong BOOLEAN NOT NULL DEFAULT TRUE,
+    ngay_tao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_tai_khoan_khach_hang FOREIGN KEY (khach_hang_id)
+        REFERENCES khach_hang(id) ON DELETE CASCADE
+);
+
+SET @mobihub_ddl = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='tai_khoan' AND COLUMN_NAME='phuong_thuc_thanh_toan_mac_dinh')=0,
+    'ALTER TABLE tai_khoan ADD COLUMN phuong_thuc_thanh_toan_mac_dinh VARCHAR(40) NOT NULL DEFAULT ''COD''', 'SELECT 1');
+PREPARE mobihub_stmt FROM @mobihub_ddl;
+EXECUTE mobihub_stmt;
+DEALLOCATE PREPARE mobihub_stmt;
+
+CREATE TABLE IF NOT EXISTS hoa_don (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ma_hoa_don VARCHAR(40) NOT NULL UNIQUE,
+    khach_hang_id BIGINT,
+    ten_khach_hang VARCHAR(150) NOT NULL,
+    tong_tien DECIMAL(15,2) NOT NULL,
+    phuong_thuc_thanh_toan VARCHAR(40) NOT NULL,
+    trang_thai VARCHAR(30) NOT NULL DEFAULT 'DA_THANH_TOAN',
+    ngay_tao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_hoa_don_khach_hang FOREIGN KEY (khach_hang_id)
+        REFERENCES khach_hang(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS chi_tiet_hoa_don (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hoa_don_id BIGINT NOT NULL,
+    san_pham_id BIGINT,
+    ten_san_pham VARCHAR(180) NOT NULL,
+    ma_san_pham VARCHAR(40) NOT NULL,
+    don_gia DECIMAL(15,2) NOT NULL,
+    so_luong INT NOT NULL,
+    thanh_tien DECIMAL(15,2) NOT NULL,
+    bao_hanh_den DATE,
+    CONSTRAINT chk_chi_tiet_so_luong CHECK (so_luong > 0),
+    CONSTRAINT fk_chi_tiet_hoa_don FOREIGN KEY (hoa_don_id)
+        REFERENCES hoa_don(id) ON DELETE CASCADE,
+    CONSTRAINT fk_chi_tiet_san_pham FOREIGN KEY (san_pham_id)
+        REFERENCES san_pham(id) ON DELETE SET NULL
+);
+
+SET @mobihub_ddl = IF((SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='chi_tiet_hoa_don' AND COLUMN_NAME='bao_hanh_den')=0,
+    'ALTER TABLE chi_tiet_hoa_don ADD COLUMN bao_hanh_den DATE NULL', 'SELECT 1');
+PREPARE mobihub_stmt FROM @mobihub_ddl;
+EXECUTE mobihub_stmt;
+DEALLOCATE PREPARE mobihub_stmt;
+
+UPDATE chi_tiet_hoa_don ci
+JOIN hoa_don hd ON hd.id=ci.hoa_don_id
+JOIN san_pham sp ON sp.id=ci.san_pham_id
+SET ci.bao_hanh_den=DATE_ADD(DATE(hd.ngay_tao), INTERVAL sp.thoi_han_bao_hanh_thang MONTH)
+WHERE ci.bao_hanh_den IS NULL;
+
+CREATE TABLE IF NOT EXISTS thong_tin_giao_hang (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hoa_don_id BIGINT NOT NULL UNIQUE,
+    dia_chi_giao_hang VARCHAR(500) NOT NULL,
+    CONSTRAINT fk_giao_hang_hoa_don FOREIGN KEY (hoa_don_id)
+        REFERENCES hoa_don(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS danh_gia (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    san_pham_id BIGINT NOT NULL,
+    khach_hang_id BIGINT NOT NULL,
+    hoa_don_id BIGINT NOT NULL,
+    so_sao INT NOT NULL,
+    noi_dung VARCHAR(1500),
+    trang_thai VARCHAR(20) NOT NULL DEFAULT 'CHO_DUYET',
+    ngay_tao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_danh_gia_so_sao CHECK (so_sao BETWEEN 1 AND 5),
+    CONSTRAINT uk_danh_gia_khach_hoa_don_sp UNIQUE (khach_hang_id, hoa_don_id, san_pham_id),
+    CONSTRAINT fk_danh_gia_san_pham FOREIGN KEY (san_pham_id)
+        REFERENCES san_pham(id) ON DELETE CASCADE,
+    CONSTRAINT fk_danh_gia_khach_hang FOREIGN KEY (khach_hang_id)
+        REFERENCES khach_hang(id) ON DELETE CASCADE,
+    CONSTRAINT fk_danh_gia_hoa_don FOREIGN KEY (hoa_don_id)
+        REFERENCES hoa_don(id) ON DELETE CASCADE
+);
+
+ALTER TABLE danh_gia MODIFY so_sao INT NOT NULL;
+
+INSERT IGNORE INTO danh_muc (ten_danh_muc, mo_ta) VALUES
+    ('Điện thoại', 'Điện thoại thông minh và điện thoại phổ thông'),
+    ('Linh kiện', 'Pin, màn hình, bo mạch và linh kiện thay thế'),
+    ('Phụ kiện', 'Ốp lưng, cáp sạc, tai nghe và phụ kiện khác');
+
+INSERT IGNORE INTO san_pham (ma_san_pham, ten_san_pham, thuong_hieu, danh_muc_id, gia,
+    so_luong_ton, anh_url, mo_ta)
+SELECT 'DEMO-IP15', 'iPhone 15 128GB', 'Apple', id, 18990000, 8,
+    'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=900&q=85',
+    'Điện thoại Apple, hàng mẫu để thử nghiệm cửa hàng.'
+FROM danh_muc WHERE ten_danh_muc = 'Điện thoại';
+
+INSERT IGNORE INTO san_pham (ma_san_pham, ten_san_pham, thuong_hieu, danh_muc_id, gia,
+    so_luong_ton, anh_url, mo_ta)
+SELECT 'DEMO-S24', 'Galaxy S24 256GB', 'Samsung', id, 16990000, 6,
+    'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=900&q=85',
+    'Điện thoại Samsung, hàng mẫu để thử nghiệm cửa hàng.'
+FROM danh_muc WHERE ten_danh_muc = 'Điện thoại';
+
+INSERT IGNORE INTO san_pham (ma_san_pham, ten_san_pham, thuong_hieu, danh_muc_id, gia,
+    so_luong_ton, anh_url, mo_ta)
+SELECT 'DEMO-CABLE', 'Cáp sạc USB-C 1m', 'Anker', id, 290000, 25,
+    'https://images.unsplash.com/photo-1615526675159-e248c3021d3f?auto=format&fit=crop&w=900&q=85',
+    'Cáp sạc USB-C, hàng mẫu để thử nghiệm cửa hàng.'
+FROM danh_muc WHERE ten_danh_muc = 'Phụ kiện';
+
+INSERT IGNORE INTO san_pham (ma_san_pham, ten_san_pham, thuong_hieu, danh_muc_id, gia,
+    so_luong_ton, anh_url, mo_ta)
+SELECT 'DEMO-BATTERY', 'Pin thay thế iPhone 13', 'OEM', id, 590000, 12,
+    NULL,
+    'Pin thay thế, hàng mẫu để thử nghiệm cửa hàng.'
+FROM danh_muc WHERE ten_danh_muc = 'Linh kiện';
+
+UPDATE san_pham SET thuong_hieu='OEM', anh_url=NULL
+WHERE ma_san_pham='DEMO-BATTERY';
